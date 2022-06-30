@@ -15,7 +15,7 @@
 		0x00000018	0x00100893	ADDI	x11, x0, 0x1
 		0x0000001c	0x00028513	ADDI	xa, x5, 0x0
 		0x00000020	0x00000073	Unkown Instruction 
-
+	middle column is the 32 bit number representing the I/J/U/R binary format of the assembly line
 	References:
 	(1) The risc-v ISA Manual ver. 2.1 @ https://riscv.org/specifications/
 	(2) https://github.com/michaeljclark/riscv-meta/blob/master/meta/opcodes
@@ -93,9 +93,9 @@ int main(int argc, char *argv[]){
 	ofstream outFile;
 
 	if(argc<2) emitError("use: rvcdiss <machine_code_file_name>\n");
-
-	inFile.open(argv[1], ios::in | ios::binary | ios::ate);
-
+	
+	inFile.open(argv[2], ios::in | ios::binary | ios::ate);
+	
 	if(inFile.is_open())
 	{
 		int fsize = inFile.tellg();
