@@ -115,7 +115,7 @@ void printInstruction(unsigned int instWord, unsigned int instPC, string instruc
 {
 	cout << "0x" << hex << setfill('0') << setw(8) << instPC << "\t0x" << setw(8) <<instWord << "\t" << dec;
 
-	cout << instruction << " " << src << ", " << (int)immediate << "(" << base >>")" << "\n";
+	cout << instruction << " " << src << ", " << (int)immediate << "(" << base << ")" << "\n";
 }
 
 
@@ -249,8 +249,7 @@ You can tell which instruction word it is from the string passed to the print fu
 
 			default:
 				printInstruction(instWord, instPC, true);
-				break
-
+				break;
 		}
 	}
 	else if(opcode==0x63)   //B instructions
@@ -376,7 +375,7 @@ void instDecExec(unsigned int instWord)
 	{
 		switch (funct3){
 			case 0: // either nop or addi
-					int imm_5 =  & 0x1; // check if bit at index 12 is 0 or not
+					int imm_5 =  (instWord >> 12) & 0x1; // check if bit at index 12 is 0 or not
 					if(imm_5) // if 1 -> addi -> supports 32 bit registers -> signed imm
 					{
 						printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], I_imm, true);
@@ -391,7 +390,7 @@ void instDecExec(unsigned int instWord)
 					break;
 
 			case 2: // LI -> pseudo so we convert to true addi rd, rd, imm -> signed imm
-					printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], imm, true);
+					printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], I_imm, true);
 					break;
 
 			case 3:	// LUI -> signed imm
@@ -496,7 +495,7 @@ void instDecExec(unsigned int instWord)
 							break;
 				}
 			default:
-				printInstruction(instWord, InstructionPC, true);	
+				printInstruction(instWord, instructionPC, true);	
 		}
 	}
 	else
