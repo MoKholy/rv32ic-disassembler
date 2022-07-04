@@ -423,24 +423,26 @@ void instDecExec(unsigned int instWord)
 								printInstruction(instWord, instructionPC, "C.ANDI", reg16[rd16], reg16[rs16], I_imm, true);
 								break;
 						case 3: // more options
+							{
 								switch(functExt)
-								{
-									case 0: // SUB
-											printInstruction(instWord, instructionPC, "C.SUB", reg16[rd16], reg16[rs16], reg16[rs16_2]);
-											break;
-									case 1: // XOR
-											printInstruction(instWord, instructionPC, "C.XOR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
-											break;
-									case 2: // OR
-											printInstruction(instWord, instructionPC, "C.OR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
-											break;
-									case 3: // AND
-											printInstruction(instWord, instructionPC, "C.AND", reg16[rd16], reg16[rs16], reg16[rs16_2]);
-											break;
-									default:
-											printInstruction(instWord, instructionPC, true);
-											break;
-								}
+									{
+										case 0: // SUB
+												printInstruction(instWord, instructionPC, "C.SUB", reg16[rd16], reg16[rs16], reg16[rs16_2]);
+												break;
+										case 1: // XOR
+												printInstruction(instWord, instructionPC, "C.XOR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
+												break;
+										case 2: // OR
+												printInstruction(instWord, instructionPC, "C.OR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
+												break;
+										case 3: // AND
+												printInstruction(instWord, instructionPC, "C.AND", reg16[rd16], reg16[rs16], reg16[rs16_2]);
+												break;
+										default:
+												printInstruction(instWord, instructionPC, true);
+												break;
+									}
+							}
 						default:
 								printInstruction(instWord, instructionPC, true);
 								break;
