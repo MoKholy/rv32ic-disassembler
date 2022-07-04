@@ -358,13 +358,15 @@ void instDecExec(unsigned int instWord)
 		unsigned int lsrs1_16 = (instWord >> 7) & 0x7; //base
 		switch(funct3){
 			case 2: // C.LW
-					printInstruction(instWord, instructionPC, "C.LW", reg16[lsrd16], reg16[lsrs1_16], immLS);
-					break;
-
+			{
+				printInstruction(instWord, instructionPC, "C.LW", reg16[lsrd16], reg16[lsrs1_16], immLS);
+				break;
+			}
 			case 6: // C.SW
-					printInstruction(instWord, instructionPC, "C.SW", reg16[lsrd16], reg16[lsrs1_16], immLS);
-					break;
-
+			{
+				printInstruction(instWord, instructionPC, "C.SW", reg16[lsrd16], reg16[lsrs1_16], immLS);
+				break;
+			}
 			default:
 					printInstruction(instWord, instructionPC, true);
 					break;
@@ -375,16 +377,19 @@ void instDecExec(unsigned int instWord)
 	{
 		switch (funct3){
 			case 0: // either nop or addi
-					int imm_5 =  (instWord >> 12) & 0x1; // check if bit at index 12 is 0 or not
-					if(imm_5) // if 1 -> addi -> supports 32 bit registers -> signed imm
-					{
-						printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], I_imm, true);
-					}
-					else //NOP -> pseudo so we convert to true
-					{
-						printInstruction(instWord, instructionPC, "C.ADDI", reg32[0], reg32[0], 0, true);
-					}
-					break;
+			{
+				int imm_5 =  (instWord >> 12) & 0x1; // check if bit at index 12 is 0 or not
+				if(imm_5) // if 1 -> addi -> supports 32 bit registers -> signed imm
+				{
+					printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], I_imm, true);
+				}
+				else //NOP -> pseudo so we convert to true
+				{
+					printInstruction(instWord, instructionPC, "C.ADDI", reg32[0], reg32[0], 0, true);
+				}
+				break;
+			}
+			
 			case 1: // JAL -> signed imm
 					printInstruction(instWord, instructionPC, "C.JAL", reg32[1], J_imm, true, true);
 					break;
@@ -394,15 +399,19 @@ void instDecExec(unsigned int instWord)
 					break;
 
 			case 3:	// LUI -> signed imm
-					unsigned int imm17 = (instWord >> 12) & 0x1;
-					unsigned int imm12to16 = (instWord >> 2) & 0x1F;
-					unsigned int imm = ((((imm17) ? 0xFFFFFFE0: 0x0) | imm12to16) << 12);
+			{
+				unsigned int imm17 = (instWord >> 12) & 0x1;
+				unsigned int imm12to16 = (instWord >> 2) & 0x1F;
+				unsigned int imm = ((((imm17) ? 0xFFFFFFE0: 0x0) | imm12to16) << 12);
 
-					printInstruction(instWord, instructionPC, "C.LUI", reg32[rd32], imm, true);
-					break;
+				printInstruction(instWord, instructionPC, "C.LUI", reg32[rd32], imm, true);
+				break;
+			}
+					
 
 			case 4: // many options
-					switch(funct7)
+			{
+				switch(funct7)
 					{
 						case 0: //SRLI 
 								printInstruction(instWord, instructionPC, "C.SRLI", reg16[rd16], reg16[rs16], I_imm, true);
@@ -437,6 +446,7 @@ void instDecExec(unsigned int instWord)
 								break;
 					} 
 					break;
+			}
 			case 5: //J -> convert to JAL
 					printInstruction(instWord, instructionPC, "C.JAL", reg32[0], J_imm, true, true);
 					break;
@@ -460,6 +470,7 @@ void instDecExec(unsigned int instWord)
 				break;
 
 			case 4:	
+			{
 				switch(funct7)
 				{
 					case 0:
@@ -494,6 +505,7 @@ void instDecExec(unsigned int instWord)
 							printInstruction(instWord, instructionPC, true);
 							break;
 				}
+			}
 			default:
 				printInstruction(instWord, instructionPC, true);	
 		}
