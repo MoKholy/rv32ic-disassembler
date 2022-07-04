@@ -117,7 +117,10 @@ void printInstruction(unsigned int instWord, unsigned int instPC, string instruc
 
 	cout << instruction << " " << src << ", " << (int)immediate << "(" << base << ")" << "\n";
 }
-
+void printInstruction(unsigned int instWord, unsigned int instPC, string instruction)
+{
+	cout << "0x" << hex << setfill('0') << setw(8) << instPC << "\t0x" << setw(8) <<instWord << "\t" << instruction << "\n";
+}
 
 
 void emitError(char *s)
@@ -151,8 +154,34 @@ void instDecExec(unsigned int instWord, bool is32)
 /*for each instruction you will find  printinstruction function called based on the number of registers
 The print function is overloaded so we pass the paramaters that fit and the rest is handeled
 You can tell which instruction word it is from the string passed to the print function*/
-
-	if(opcode == 0x33){		// R Instructions
+	if(opcode == 0x3)
+	{
+		switch (funct3)
+			{
+			case 0: 
+				printInstruction(instWord, instPC, "LB", reg32[rd], reg32[rs1], I_imm, true);
+				break;
+			case 1: 
+				printInstruction(instWord, instPC, "LH", reg32[rd], reg32[rs1], I_imm, true);
+				break;
+			case 2: 
+				printInstruction(instWord, instPC, "LW", reg32[rd], reg32[rs1], I_imm, true);
+				break;
+			case 4: 
+				printInstruction(instWord, instPC, "LBU", reg32[rd], reg32[rs1], I_imm, false);
+				break;
+			case 5: 
+				printInstruction(instWord, instPC, "LHU", reg32[rd], reg32[rs1], I_imm, false);
+				break;
+			case 6: 
+				printInstruction(instWord, instPC, "LWU", reg32[rd], reg32[rs1], I_imm, false);
+				break;
+			default: 
+				printInstruction(instWord, instPC, true);
+				break;
+			}
+	}
+	else if(opcode == 0x33){		// R Instructions
 		switch(funct3){
 			case 0:
 				if (funct7 == 32) // Sub
@@ -321,6 +350,10 @@ You can tell which instruction word it is from the string passed to the print fu
 	else if(opcode == 0x6F) //J-TYPE
 	{
 		printInstruction(instWord, instPC, "JAL", reg32[rd], J_imm, true, true);
+	}
+	else if (opcode == 0x73)
+	{
+		printInstruction(instWord, instPC, "ecall");
 	}
 	else 
 	{
@@ -539,7 +572,7 @@ int main(int argc, char *argv[]){
 
 		while(true){
 			int temp = memory[pc] & 0x00000003;	//anding with 3 to check whether it is 32 or 16 bit. 
-			bool is32 = true;
+			bool is32 = false;
 
 			if(is32==3){ //if the anded result gives us 3 then it is 32 bits
 				instWord = 	(unsigned char)memory[pc] |
@@ -547,14 +580,17 @@ int main(int argc, char *argv[]){
 							(((unsigned char)memory[pc+2])<<16) |
 							(((unsigned char)memory[pc+3])<<24);
 				pc += 4;
+				is32 = true;
+				instDecExec(instWord, is32);
 			}
 			else {
 				instWord = (unsigned char)memory[pc] | (((unsigned char)memory[pc + 1]) << 8);
 				is32 = false;
 				pc += 2;
+				instDecExec(instWord);
 			}
 				// remove the following line once you have a complete simulator
-				instDecExec(instWord, is32);
+				
 				if (!memory[pc]) break;	//stop when we've gone through all the instructions in the memory.
 		}
 
