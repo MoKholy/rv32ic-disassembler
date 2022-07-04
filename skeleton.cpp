@@ -117,7 +117,7 @@ void printInstruction(unsigned int instWord, unsigned int instPC, string instruc
 
 	cout << instruction << " " << src << ", " << (int)immediate << "(" << base << ")" << "\n";
 }
-void printInstruction(unsigned int instWord, unsigned int instPC, string instruction)
+void printInstruction_ecall(unsigned int instWord, unsigned int instPC, string instruction)
 {
 	cout << "0x" << hex << setfill('0') << setw(8) << instPC << "\t0x" << setw(8) <<instWord << "\t" << instruction << "\n";
 }
@@ -353,7 +353,7 @@ You can tell which instruction word it is from the string passed to the print fu
 	}
 	else if (opcode == 0x73)
 	{
-		printInstruction(instWord, instPC, "ecall");
+		printInstruction_ecall(instWord, instPC, "ecall");
 	}
 	else 
 	{
@@ -574,7 +574,7 @@ int main(int argc, char *argv[]){
 			int temp = memory[pc] & 0x00000003;	//anding with 3 to check whether it is 32 or 16 bit. 
 			bool is32 = false;
 
-			if(is32==3){ //if the anded result gives us 3 then it is 32 bits
+			if(temp==3){ //if the anded result gives us 3 then it is 32 bits
 				instWord = 	(unsigned char)memory[pc] |
 							(((unsigned char)memory[pc+1])<<8) |
 							(((unsigned char)memory[pc+2])<<16) |
