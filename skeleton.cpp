@@ -377,19 +377,19 @@ void instDecExec(unsigned int instWord)
 	{
 		switch (funct3){
 			case 0: // either nop or addi
-			{
-				int imm_5 =  (instWord >> 12) & 0x1; // check if bit at index 12 is 0 or not
-				if(imm_5) // if 1 -> addi -> supports 32 bit registers -> signed imm
 				{
-					printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], I_imm, true);
-				}
-				else //NOP -> pseudo so we convert to true
-				{
-					printInstruction(instWord, instructionPC, "C.ADDI", reg32[0], reg32[0], 0, true);
+					int imm_5 =  (instWord >> 12) & 0x1; // check if bit at index 12 is 0 or not
+					if(imm_5) // if 1 -> addi -> supports 32 bit registers -> signed imm
+					{
+						printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], I_imm, true);
+					}
+					else //NOP -> pseudo so we convert to true
+					{
+						printInstruction(instWord, instructionPC, "C.ADDI", reg32[0], reg32[0], 0, true);
+					}
+					
 				}
 				break;
-			}
-			
 			case 1: // JAL -> signed imm
 					printInstruction(instWord, instructionPC, "C.JAL", reg32[1], J_imm, true, true);
 					break;
@@ -399,56 +399,56 @@ void instDecExec(unsigned int instWord)
 					break;
 
 			case 3:	// LUI -> signed imm
-			{
-				unsigned int imm17 = (instWord >> 12) & 0x1;
-				unsigned int imm12to16 = (instWord >> 2) & 0x1F;
-				unsigned int imm = ((((imm17) ? 0xFFFFFFE0: 0x0) | imm12to16) << 12);
+				{
+					unsigned int imm17 = (instWord >> 12) & 0x1;
+					unsigned int imm12to16 = (instWord >> 2) & 0x1F;
+					unsigned int imm = ((((imm17) ? 0xFFFFFFE0: 0x0) | imm12to16) << 12);
 
-				printInstruction(instWord, instructionPC, "C.LUI", reg32[rd32], imm, true);
-				break;
-			}
+					printInstruction(instWord, instructionPC, "C.LUI", reg32[rd32], imm, true);
 					
+				}
+				break;
 
 			case 4: // many options
-			{
-				switch(funct7)
-					{
-						case 0: //SRLI 
-								printInstruction(instWord, instructionPC, "C.SRLI", reg16[rd16], reg16[rs16], I_imm, true);
-								break;
-						case 1: //SRAI 
-								printInstruction(instWord, instructionPC, "C.SRAI", reg16[rd16], reg16[rs16], I_imm, true);
-								break;
-						case 2: // ANDI 
-								printInstruction(instWord, instructionPC, "C.ANDI", reg16[rd16], reg16[rs16], I_imm, true);
-								break;
-						case 3: // more options
-							{
-								switch(functExt)
-									{
-										case 0: // SUB
-												printInstruction(instWord, instructionPC, "C.SUB", reg16[rd16], reg16[rs16], reg16[rs16_2]);
-												break;
-										case 1: // XOR
-												printInstruction(instWord, instructionPC, "C.XOR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
-												break;
-										case 2: // OR
-												printInstruction(instWord, instructionPC, "C.OR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
-												break;
-										case 3: // AND
-												printInstruction(instWord, instructionPC, "C.AND", reg16[rd16], reg16[rs16], reg16[rs16_2]);
-												break;
-										default:
-												printInstruction(instWord, instructionPC, true);
-												break;
-									}
-							}
-						default:
-								printInstruction(instWord, instructionPC, true);
-								break;
-					} 
-					break;
-			}
+				{
+					switch(funct7)
+						{
+							case 0: //SRLI 
+									printInstruction(instWord, instructionPC, "C.SRLI", reg16[rd16], reg16[rs16], I_imm, true);
+									break;
+							case 1: //SRAI 
+									printInstruction(instWord, instructionPC, "C.SRAI", reg16[rd16], reg16[rs16], I_imm, true);
+									break;
+							case 2: // ANDI 
+									printInstruction(instWord, instructionPC, "C.ANDI", reg16[rd16], reg16[rs16], I_imm, true);
+									break;
+							case 3: // more options
+								{
+									switch(functExt)
+										{
+											case 0: // SUB
+													printInstruction(instWord, instructionPC, "C.SUB", reg16[rd16], reg16[rs16], reg16[rs16_2]);
+													break;
+											case 1: // XOR
+													printInstruction(instWord, instructionPC, "C.XOR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
+													break;
+											case 2: // OR
+													printInstruction(instWord, instructionPC, "C.OR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
+													break;
+											case 3: // AND
+													printInstruction(instWord, instructionPC, "C.AND", reg16[rd16], reg16[rs16], reg16[rs16_2]);
+													break;
+											default:
+													printInstruction(instWord, instructionPC, true);
+													break;
+										}
+								}
+							default:
+									printInstruction(instWord, instructionPC, true);
+									break;
+						} 
+				}
+				break;
 			case 5: //J -> convert to JAL
 					printInstruction(instWord, instructionPC, "C.JAL", reg32[0], J_imm, true, true);
 					break;
@@ -472,42 +472,43 @@ void instDecExec(unsigned int instWord)
 				break;
 
 			case 4:	
-			{
-				switch(funct7)
 				{
-					case 0:
-						if(rs32_2 == 0x0) // JR
-						{
-							printInstruction(instWord, instructionPC, "C.JALR", reg32[0],  reg32[rs32], 0, true, true);
-						}
-						else if(rs32_2 != 0x0) // MV -> switch to true instruction 
-						{
-							printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32_2], 0, true);
-						}
-						else // unknown 
-						{
-							printInstruction(instWord, instructionPC, true);
-						}
-						break;
-					case 1:
-						if(rs32_2 == 0x0) // JALR -> jalr x1, rs1, 0
-						{
-							printInstruction(instWord, instructionPC, "C.JALR", reg32[1],  reg32[rs32], 0, true, true);
-						}
-						else if(rs32_2 != 0x0) // ADD 
-						{
-							printInstruction(instWord, instructionPC, "C.ADD", reg32[rd32], reg32[rs32], reg32[rs32_2]);
-						}
-						else // unknown 
-						{
-							printInstruction(instWord, instructionPC, true);
-						}
-						break;
-					default:
-							printInstruction(instWord, instructionPC, true);
+					switch(funct7)
+					{
+						case 0:
+							if(rs32_2 == 0x0) // JR
+							{
+								printInstruction(instWord, instructionPC, "C.JALR", reg32[0],  reg32[rs32], 0, true, true);
+							}
+							else if(rs32_2 != 0x0) // MV -> switch to true instruction 
+							{
+								printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32_2], 0, true);
+							}
+							else // unknown 
+							{
+								printInstruction(instWord, instructionPC, true);
+							}
 							break;
+						case 1:
+							if(rs32_2 == 0x0) // JALR -> jalr x1, rs1, 0
+							{
+								printInstruction(instWord, instructionPC, "C.JALR", reg32[1],  reg32[rs32], 0, true, true);
+							}
+							else if(rs32_2 != 0x0) // ADD 
+							{
+								printInstruction(instWord, instructionPC, "C.ADD", reg32[rd32], reg32[rs32], reg32[rs32_2]);
+							}
+							else // unknown 
+							{
+								printInstruction(instWord, instructionPC, true);
+							}
+							break;
+						default:
+								printInstruction(instWord, instructionPC, true);
+								break;
+					}
 				}
-			}
+				break;
 			default:
 				printInstruction(instWord, instructionPC, true);	
 		}
