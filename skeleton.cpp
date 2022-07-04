@@ -51,30 +51,51 @@ string reg16[8] = {"s0", "s1", "a0", "a1",
  				   "a2", "a3", "a4", "a5"};
 
 // label table
-unordered_map <int, string> labels;
+// unordered_map <int, string> labels;
 
 unsigned int pc = 0x0;
 
 char memory[8*1024];	// only 8KB of memory located at address 0
 
 // functions to print instruction
-// 
-// takes only one register and unsigned immediate
-void printInstruction(unsigned int instWord, unsigned int instPC, string instruction, string rd, unsigned int immediate)
+
+// takes only one register and unsigned immediate, bool sign determines whether signed or unsigned, bool address determines whether it is an address of a number
+void printInstruction(unsigned int instWord, unsigned int instPC, string instruction, string rd, unsigned int immediate, bool sign, bool address = false)
 {
 	cout << "0x" << hex << setfill('0') << setw(8) << instPC << "\t0x" << setw(8) <<instWord << "\t" << dec;
-	cout << instruction << " " << rd << ", " << immediate << "\n";
+	cout << instruction << " " << rd << ", ";
+	if(address)
+	{
+		cout << "0x" << hex;
+	}
+	if(sign)
+	{
+		cout << (int) immediate << "\n";
+	} 
+	else
+	{
+		cout << immediate << "\n";
+	}
 
 }
-// takes two registers and unsigned immediate
-void printInstruction(unsigned int instWord, unsigned int instPC, string instruction, string rd, string rs1, unsigned int immediate)
+
+// takes two registers and unsigned immediate, bool sign value determines whether it is signed or unsigned, address determines whether we should write hex format or decimal
+void printInstruction(unsigned int instWord, unsigned int instPC, string instruction, string rd, string rs1, unsigned int immediate, bool sign, bool address  = false)
 {
 	cout << "0x" << hex << setfill('0') << setw(8) << instPC << "\t0x" << setw(8) <<instWord << "\t" << dec;
-	cout << instruction << " " << rd << ", " << rs1 << ", "<< immediate << "\n";
-
+	cout << instruction << " " << rd << ", " << rs1 << ", ";
+	if(address){
+		cout << "0x" << hex;
+	}
+	if(sign)
+	{
+		cout << (int)immediate << "\n";
+	} else
+	{
+		cout << immediate << "\n";
+	}
 }
-
-// for unknowned instructions
+// for unknown instructions
 void printInstruction(unsigned int instWord, unsigned int instPC, bool unknown = false){
 	cout << "0x" << hex << setfill('0') << setw(8) << instPC << "\t0x" << setw(8) <<instWord << "\t" << dec;
 	if(unknown){
@@ -83,85 +104,18 @@ void printInstruction(unsigned int instWord, unsigned int instPC, bool unknown =
 	}
 }
 // regular instructions with 3 registers
-void printInstruction(unsigned int instWord, unsigned int instPC, string instruction, string rd, string rs1, string rs2, unsigned int immediate = 0, bool address = false, bool memoryAccess = false){
+void printInstruction(unsigned int instWord, unsigned int instPC, string instruction, string rd, string rs1, string rs2){
 	
 	cout << "0x" << hex << setfill('0') << setw(8) << instPC << "\t0x" << setw(8) <<instWord << "\t" << dec;
-	// if unknown print unknown and exit
-	
-	// if not imm and address and memory access -> function has 3 registers
-	if(!immediate && !address && !memoryAccess)
-	{
-		 cout << instruction << " " << rd << ", " << rs1 << ", " << rs2 << "\n";
-	}else{
-		// default part of output for all other instructions
-		cout << instruction << " " << rd << ", ";
-		// check if not memory access and rs1 != ""
-		if(!memoryAccess && rs1 != "")
-		{
-			cout << rs1 << ", ";
-		}
-
-		// check if label
-		if(address)
-		{
-			cout << hex << "0x";
-		}
-		
-		cout << (int)immediate;
-		
-		// check for address
-		if(address)
-		{
-			// to be implemented
-		}
-
-		// check if we are accessing memory in instruction
-		if(memoryAccess)
-		{
-			cout << "(" << rs1 << ")";
-		}
-
-		cout << "\n";
-	}
+	cout << instruction << " " << rd << ", " << rs1 << ", " << rs2 << "\n";
 }
 
-// for instructions with signed immediate
-void printInstruction(unsigned int instWord, unsigned int instPC, string instruction, string rd, string rs1, int immediate = 0, bool address = false, bool memoryAccess = false)
+// store and load
+void printInstruction(unsigned int instWord, unsigned int instPC, string instruction, string src, string base, unsigned int immediate = 0)
 {
 	cout << "0x" << hex << setfill('0') << setw(8) << instPC << "\t0x" << setw(8) <<instWord << "\t" << dec;
-	// if unknown print unknown and exit
 
-	// if not imm and address and memory access -> function has 3 registers
-
-	// default part of output for all other instructions
-	cout << instruction << " " << rd << ", ";
-	// check if not memory access and rs1 != ""
-	if(!memoryAccess && rs1 != "")
-	{
-		cout << rs1 << ", ";
-	}
-
-	// check if label
-	if(address)
-	{
-		cout << hex << "0x";
-	}
-	
-	cout << (int)immediate;
-	
-	// check for address
-	if(address)
-	{
-		// to be implemented
-	}
-
-	// check if we are accessing memory in instruction
-	if(memoryAccess)
-	{
-		cout << "(" << rs1 << ")";
-	}
-
-	cout << "\n";
+	cout << instruction << " " << src << ", " << (int)immediate << "(" << base >>")" << "\n";
 }
 
 
@@ -179,7 +133,6 @@ void instDecExec(unsigned int instWord, bool is32)
 	unsigned int I_imm, S_imm, B_imm, U_imm, J_imm; //for the immediate values of the 32 bits
 	unsigned int address;
 
-	if(is32){
 	unsigned int instPC = pc - 4;
 
 	opcode = instWord & 0x0000007F;
@@ -191,8 +144,9 @@ void instDecExec(unsigned int instWord, bool is32)
     //these are attained by looking at the RV32I instruction set and seeing where the immediate entries lie and how many shifts are necessary
 	I_imm = ((instWord >> 20) & 0x7FF) | (((instWord >> 31) ? 0xFFFFF800 : 0x0));
 	B_imm = ((instWord >> 7 & 0x1) << 12) | ((instWord >> 25 & 0x3F) << 5) | (instWord >> 8 & 0xF) | ((instWord >> 31) ? 0xFFFFF800 : 0x0);
-    // imm[11]                           imm[10:5]                                       imm[4:1]
+    S_imm = ((instWord >> 7) & 0x1F) | ((instWord >> 25) & 0x3F << 5) | (((instWord >> 31) ? 0xFFFFF800 : 0x0)); 
 	U_imm = ((instWord & 0xFFFFF00) >> 12);
+	J_imm = ((instWord & 0x7FE00000) >> 20) | ((instWord >> 20 & 0x1) << 11) | ((instWord >> 12 & 0xFF) << 12) | ((instWord >> 31) ? 0xFFFFF800 : 0x0);
 
 /*for each instruction you will find  printinstruction function called based on the number of registers
 The print function is overloaded so we pass the paramaters that fit and the rest is handeled
@@ -200,125 +154,218 @@ You can tell which instruction word it is from the string passed to the print fu
 
 	if(opcode == 0x33){		// R Instructions
 		switch(funct3){
-			case 0:{
-				if (funct7 == 32)
+			case 0:
+				if (funct7 == 32) // Sub
+				{
 					printInstruction(instWord, instPC, "SUB", reg32[rd], reg32[rs1], reg32[rs2]);
-				else
-                    printInstruction(instWord, instPC, "ADD", reg32[rd], reg32[rs1], reg32[rs2]);
+				}
+				else // ADD
+				{
+					printInstruction(instWord, instPC, "ADD", reg32[rd], reg32[rs1], reg32[rs2]);
+				}
+				break;
 
-				break;}
-			case 1:
+			case 1: // SLL
                 printInstruction(instWord, instPC, "SLL", reg32[rd], reg32[rs1], reg32[rs2]);
 				break;
-			case 2:
+
+			case 2: //SLT
                 printInstruction(instWord, instPC, "SLT", reg32[rd], reg32[rs1], reg32[rs2]);
 				break;
-			case 3:
-                printInstruction(instWord, instPC, "SLTU", reg32[rd], reg32[rs1], reg32[rs2]); //not sure about this cuz of unsigned
+
+			case 3: //SLTU
+                printInstruction(instWord, instPC, "SLTU", reg32[rd], reg32[rs1], reg32[rs2]); 
 				break;
-			case 4:
+
+			case 4:	//XOR
                 printInstruction(instWord, instPC, "XOR", reg32[rd], reg32[rs1], reg32[rs2]);
 				break;
-			case 5:
-				if (funct7 == 32)
-                    printInstruction(instWord, instPC, "SRA", reg32[rd], reg32[rs1], reg32[rs2]);
-				else
-                    printInstruction(instWord, instPC, "SRL", reg32[rd], reg32[rs1], reg32[rs2]);
 
+			case 5:
+				if (funct7 == 32) // SRA
+				{
+					printInstruction(instWord, instPC, "SRA", reg32[rd], reg32[rs1], reg32[rs2]);
+				}
+                else // SRL
+				{
+					printInstruction(instWord, instPC, "SRL", reg32[rd], reg32[rs1], reg32[rs2]);
+				}
 				break;
-			case 6:
+
+			case 6: //OR
                 printInstruction(instWord, instPC, "OR", reg32[rd], reg32[rs1], reg32[rs2]);
 				break;
 
-			case 7:
+			case 7: //AND
                 printInstruction(instWord, instPC, "AND", reg32[rd], reg32[rs1], reg32[rs2]);
 				break;
+
 			default:
-				cout << "\tUnknown R Instruction \n";
+				printInstruction(instWord, instPC, true);
 		}
-	} else if(opcode == 0x13){	// I instructions
+	} 
+	else if(opcode == 0x13)	// I instructions -> missing JALR, LW, LH, LB
+	{	
 		switch(funct3){
-			case 0:	cout << "\tADDI\tx" << rd << ", x" << rs1 << ", " << hex << "0x" << (int)I_imm << "\n";
-					break;
+			case 0:   // ADDI 
+				printInstruction(instWord, instPC, "ADDI", reg32[rd], reg32[rs1], I_imm, true);
+            	break;
+
+			case 1: //SLLI
+				printInstruction(instWord, instPC, "SLLI", reg32[rd], reg32[rs1], I_imm, true);
+				break;
+
+			case 2: //SLTI
+				printInstruction(instWord, instPC, "SLTI", reg32[rd], reg32[rs1], I_imm, true);
+				break;
+
+			case 3: //SLTIU
+				printInstruction(instWord, instPC, "SLTIU", reg32[rd], reg32[rs1], I_imm, false);
+				break;
+
+			case 4: //XORI 
+				printInstruction(instWord, instPC, "XORI", reg32[rd], reg32[rs1], I_imm, true);
+				break;
+
+			case 5: //SRLI & SRAI
+				if (funct7 == 0)
+				{
+					printInstruction(instWord, instPC, "SRLI", reg32[rd], reg32[rs1], I_imm, true);
+
+				}
+				else 
+				{
+					printInstruction(instWord, instPC, "SRAI", reg32[rd], reg32[rs1], I_imm, true);
+				}
+				break;
+
+			case 6: //ORI
+			 	printInstruction(instWord, instPC, "ORI", reg32[rd], reg32[rs1], I_imm, true);
+				break;
+
+			case 7: //ANDI
+				printInstruction(instWord, instPC, "ANDI", reg32[rd], reg32[rs1], I_imm, true);
+				break;
+
 			default:
-					cout << "\tUnkown I Instruction \n";
+				printInstruction(instWord, instPC, true);
+				break
+
 		}
-	} else if(opcode==0x63){ //B instructions
+	}
+	else if(opcode==0x63)   //B instructions
+	{ 
 		switch(funct3){
-			case 0:
-                printInstruction(instWord, instPC, "BEQ", reg32[rs1], reg32[rs2], (int)B_imm);
+			case 0:// BEQ
+                printInstruction(instWord, instPC, "BEQ", reg32[rs1], reg32[rs2], B_imm, true, true);
+				break;
 
+			case 1: //BNE
+                printInstruction(instWord, instPC, "BNE", reg32[rs1], reg32[rs2], B_imm, true, true);
 				break;
-			case 1:
-                printInstruction(instWord, instPC, "BNE", reg32[rs1], reg32[rs2], (int)B_imm);
+
+			case 4: //BLT
+                printInstruction(instWord, instPC, "BLT", reg32[rs1], reg32[rs2], B_imm, true, true);
 				break;
-			case 4:
-                printInstruction(instWord, instPC, "BLT", reg32[rs1], reg32[rs2], (int)B_imm);
+
+			case 5: //BGE
+                printInstruction(instWord, instPC, "BGE", reg32[rs1], reg32[rs2], B_imm, true, true);
 				break;
-			case 5:
-                printInstruction(instWord, instPC, "BGE", reg32[rs1], reg32[rs2], (int)B_imm);
+
+			case 6://BLTU
+                printInstruction(instWord, instPC, "BLTU", reg32[rs1], reg32[rs2], B_imm, false, true);
 				break;
-			case 6:
-                printInstruction(instWord, instPC, "BLTU", reg32[rs1], reg32[rs2], B_imm);
+
+			case 7: //BGEU
+                printInstruction(instWord, instPC, "BGEU", reg32[rs1], reg32[rs2], B_imm, false, true);
 				break;
-			case 7:
-                printInstruction(instWord, instPC, "BGEU", reg32[rs1], reg32[rs2], B_imm);
-				break;
+
 			default:
-				cout << " Unkown B Instruction " << "\n";
-		}
-	} 		else if (opcode == 0x37) // LUI-U instruction
-		{
-			cout << "\tLUI\t" << reg32[rd] << ", " << hex << "0x" << (int)U_imm << endl; //one register and a signed immediate
-		}
+				printInstruction(instWord, instPC, true);
+				break;
 
-		else if (opcode == 0x17) //AUIPC- U instruction
-		{
-			cout << "\tAUIPC\t" << reg32[rd] << ", " << hex << "0x" << (int)U_imm << endl; //one register and a signed immediate
 		}
-	else {
-		cout << "\tUnkown Instruction \n";
+	} 		
+	else if (opcode == 0x37) // LUI-U instruction
+	{
+		printInstruction(instWord, instPC, "LUI", reg32[rd], U_imm, true);
 	}
-
-	} else{ //16 bit instructions
-
+	else if (opcode == 0x17) //AUIPC- U instruction
+	{
+		printInstruction(instWord, instPC, "AUIPC", reg32[rd], U_imm, true);
 	}
-}
+	else if (opcode == 0x23) // S Instructions
+	{
+		switch (funct3)
+            {
+            case 0:  //SH
+				printInstruction(instWord, instPC, "SH", reg32[rs2], reg32[rs1], S_imm);
+                break;
+
+            case 1:  //SB
+				printInstruction(instWord, instPC, "SB", reg32[rs2], reg32[rs1], S_imm);
+                break;
+
+            case 2:  //SW
+				printInstruction(instWord, instPC, "SW", reg32[rs2], reg32[rs1], S_imm);
+                break;
+
+            default:
+                printInstruction(instWord, instPC, true);
+				break;
+            }
+	}
+	else if(opcode == 0x67) // I Type, JALR
+	{
+		printInstruction(instWord, instPC, "JALR", reg32[rd], reg32[rs1], I_imm, true, true);
+	}
+	else if(opcode == 0x6F) //J-TYPE
+	{
+		printInstruction(instWord, instPC, "JAL", reg32[rd], J_imm, true, true);
+	}
+	else 
+	{
+		printInstruction(instWord, instPC, true);
+	}
+} 
 
 // for rv32ic instructions
 void instDecExec(unsigned int instWord)
 {
-	unsigned int rd, rs1, rs2, funct3, funct7, opcode;
-	unsigned int I_imm, S_imm, B_imm, U_imm, J_imm;
 	unsigned int address;
-
-	unsigned int instPC = pc - 4;
-	// treat 16 and 32 bit instruction differently
-		// pc -2 as it is 16 bits
+	// pc -2 as it is 16 bits
 	unsigned int instructionPC = pc-2; 
-	unsigned int opcode = instWord & 0x0003; // and with 00..11 to get opcode
+	unsigned int opcode = instWord & 0x3; // and with 00..11 to get opcode
 	unsigned int funct3 = (instWord >> 13) & 0x7; // funct3 in same location for all
-	// check opcode
+	unsigned int funct7 = (instWord >> 12) & 0x1;
+	unsigned int functExt = (instWord >> 5) & 0x3;
+	// registers
+	unsigned int rd32, rs32, rs32_2;
+	rd32 = rs32 = (instWord >> 7) & 0x1F;
+	rs32_2 = (instWord >> 2) & 0x1F;
+
+	unsigned int rd16, rs16, rs16_2;;
+	rd16=rs16 = (instWord >> 7) & 0x7;
+	rs16_2 = (instWord >> 2) & 0x7;
+
+	//imm
+	unsigned int J_imm = (((instWord >> 3) & 0x7) << 1) | (((instWord >> 11) & 0x1) << 4) | (((instWord >> 2) & 0x1) << 5) | (((instWord >> 7) & 0x1) << 6) | (((instWord >> 6) & 0x1) << 7) | (((instWord >> 9) & 0x3) << 8) | (((instWord >> 8) & 0x1) << 10) | (((instWord >> 12) ? 0xFFFFF800: 0x0));
+	unsigned int I_imm = ((instWord >> 12) ? 0xFFFFFFE0: 0x0) | (instWord >> 2) & 0x1F;
+	unsigned int immLS = (((instWord >> 6) & 0x1) << 2)| (((instWord >> 5) & 0x1) << 6) | ((( instWord >> 10) & 0x7) << 3); // 0 extended
+	unsigned int B_imm = (((instWord >> 12) & 0x1) ? 0xFFFFFF00: 0x0) | (((instWord >> 3) & 0x3) << 1) | (((instWord >> 10) & 0x3) << 3) | (((instWord >> 2) & 0x1) << 5) | (((instWord > 5) & 0x3) << 6);
 	if(opcode == 0x0) // load/store 
 	{	
-		// get individual imm at each index
-		unsigned int imm2 = (instWord >> 6) & 0x0001;
-		unsigned int imm6 = (instWord >> 5) & 0x0001;
-		unsigned int imm3to5 = ( instWord >> 10) & 0x0007;
-		// combine and scale by 4
-		unsigned int immLS = ((imm2 & 0x1) << 2)| ((imm6 & 0x1) << 6) | ((imm3to5 & 0x7) << 3);
-		
-		
-
-		unsigned int rd16 = (instWord >> 2) & 0x0007; // only supports compressed registers for L/S
-		unsigned int rs1_16 = (instWord >> 7) & 0x0007; 
+		unsigned int lsrd16 = (instWord >> 2) & 0x7; // only supports compressed registers for L/S / base or dest
+		unsigned int lsrs1_16 = (instWord >> 7) & 0x7; //base
 		switch(funct3){
 			case 2: // C.LW
-					printInstruction(instWord, instructionPC, "C.LW", reg16[rd16], reg16[rs1_16], "", immLS, false, true);
+					printInstruction(instWord, instructionPC, "C.LW", reg16[lsrd16], reg16[lsrs1_16], immLS);
 					break;
+
 			case 6: // C.SW
-					printInstruction(instWord, instructionPC, "C.SW", reg16[rd16], reg16[rs1], "", immLS, false, true);
+					printInstruction(instWord, instructionPC, "C.SW", reg16[lsrd16], reg16[lsrs1_16], immLS);
 					break;
+
 			default:
 					printInstruction(instWord, instructionPC, true);
 					break;
@@ -329,102 +376,58 @@ void instDecExec(unsigned int instWord)
 	{
 		switch (funct3){
 			case 0: // either nop or addi
-					int imm_5 = (instWord >> 12) & 0x1; // check if bit at index 12 is 0 or not
+					int imm_5 =  & 0x1; // check if bit at index 12 is 0 or not
 					if(imm_5) // if 1 -> addi -> supports 32 bit registers -> signed imm
 					{
-						unsigned int rd32, rs32;
-						rd32 = rs32 = (instWord >> 7) & 0b11111; // rd and rs1 are the same
-						
-						int imm0to4 = (instWord >> 2) & 0x1F;
-						int imm = ((imm_5) ? 0xFFFFFFE0: 0x0) | imm0to4;
-
-						printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], "", imm);
+						printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], I_imm, true);
 					}
 					else //NOP -> pseudo so we convert to true
 					{
-						printInstruction(instWord, instructionPC, "C.ADDI", reg32[0], reg32[0], "", 0);
+						printInstruction(instWord, instructionPC, "C.ADDI", reg32[0], reg32[0], 0, true);
 					}
 					break;
 			case 1: // JAL -> signed imm
-					int imm5 = (instWord >> 2) & 0x1;
-					int imm1to3 = (instWord >> 3) & 0x7;
-					int imm7 = (instWord >> 6) & 0x1;
-					int imm6 = (instWord >> 7) & 0x1;
-					int imm10 = (instWord >> 8) & 0x1;
-					int imm8to9 = (instWord >> 9) & 0x3;
-					int imm4 = (instWord >> 11) & 0x1;
-					int imm11 = (instWord >> 12) & 0x1;
-					int imm = ((imm1to3 & 0x7) << 1) | ((imm4 & 0x1) << 4) | ((imm5 & 0x1) << 5) | ((imm6 & 0x1) << 6) | ((imm7 & 0x1) << 7) | ((imm8to9 & 0x3) << 8) | ((imm10 & 0x1) << 10) | ((imm11 ? 0xFFFFF800: 0x0)) ;
-					printInstruction(instWord, instructionPC, "C.JAL", reg32[1], imm);
+					printInstruction(instWord, instructionPC, "C.JAL", reg32[1], J_imm, true, true);
 					break;
+
 			case 2: // LI -> pseudo so we convert to true addi rd, rd, imm -> signed imm
-					unsigned int rd32, rs32;
-					rd32 = rs32 = (instWord >> 7) & 0x1F;
-
-					int imm5 = (instWord >> 12) & 0x1;
-					int imm0to4 = (instWord >> 2) & 0x1F;
-					int imm = ((imm5) ? 0xFFFFFFE0: 0x0) | imm0to4;
-
-					printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], "", imm);
+					printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32], imm, true);
 					break;
+
 			case 3:	// LUI -> signed imm
-					unsigned int rd32 = (instWord >> 7) & 0x1F;
-					int imm17 = (instWord >> 12) & 0x1;
-					int imm12to16 = (instWord >> 2) & 0x1F;
-					int imm = ((((imm17) ? 0xFFFFFFE0: 0x0) | imm12to16) << 12);
-					printInstruction(instWord, instructionPC, "C.LUI", reg32[rd32], imm);
+					unsigned int imm17 = (instWord >> 12) & 0x1;
+					unsigned int imm12to16 = (instWord >> 2) & 0x1F;
+					unsigned int imm = ((((imm17) ? 0xFFFFFFE0: 0x0) | imm12to16) << 12);
+
+					printInstruction(instWord, instructionPC, "C.LUI", reg32[rd32], imm, true);
 					break;
+
 			case 4: // many options
-					unsigned int funct7 = (instWord >> 10) & 0x2; // will use to differentiate between instructions further
 					switch(funct7)
 					{
-						case 0: //SRLI -> unsigned imm -> supports 16 bit registers only
-								unsigned int rd16, rs16;
-								rd16=rs16 = (instWord >> 7) & 0x7;
-								unsigned int imm5 = (instWord >> 12) & 0x1;
-								unsigned int imm0to4 = (instWord >> 2) & 0x1F;
-								unsigned int imm = ((imm5 & 0x1) << 5) | (imm0to4 & 0x1F);
-								printInstruction(instWord, instructionPC, "C.SRLI", reg16[rd16], reg16[rs16], imm);
+						case 0: //SRLI 
+								printInstruction(instWord, instructionPC, "C.SRLI", reg16[rd16], reg16[rs16], I_imm, true);
 								break;
-						case 1: //SRAI -> unsigned immediate
-								unsigned int rd16, rs16;
-								rd16=rs16 = (instWord >> 7) & 0x7;
-								unsigned int imm5 = (instWord >> 12) & 0x1;
-								unsigned int imm0to4 = (instWord >> 2) & 0x1F;
-								unsigned int imm = ((imm5 & 0x1) << 5) | (imm0to4 & 0x1F);
-								printInstruction(instWord, instructionPC, "C.SRAI", reg16[rd16], reg16[rs16], imm);
+						case 1: //SRAI 
+								printInstruction(instWord, instructionPC, "C.SRAI", reg16[rd16], reg16[rs16], I_imm, true);
 								break;
-						case 2: // ANDI -> signed immediate
-								unsigned int rd16, rs16;
-								rd16=rs16 = (instWord >> 7) & 0x7;
-								int imm_5 = (instWord >> 12) & 0x1;
-								int imm0to4 = (instWord >> 2) & 0x1F;
-								int imm = ((imm_5) ? 0xFFFFFFE0: 0x0) | imm0to4;
-								printInstruction(instWord, instructionPC, "C.ANDI", reg16[rd16], reg16[rs16], imm);
+						case 2: // ANDI 
+								printInstruction(instWord, instructionPC, "C.ANDI", reg16[rd16], reg16[rs16], I_imm, true);
 								break;
 						case 3: // more options
-								unsigned int functExt = (instWord >> 5) & 0x3;
-								unsigned int rd16, rs16_1, rs16_2;
-								rd16=rs16_1 = (instWord >> 7) & 0x7;
-								rs16_2 = (instWord >> 2) & 0x7;
-
 								switch(functExt)
-							
 								{
 									case 0: // SUB
-											printInstruction(instWord, instructionPC, "C.SUB", reg16[rd16], reg16[rs16_1], reg16[rs16_2]);
-
+											printInstruction(instWord, instructionPC, "C.SUB", reg16[rd16], reg16[rs16], reg16[rs16_2]);
 											break;
 									case 1: // XOR
-											printInstruction(instWord, instructionPC, "C.XOR", reg16[rd16], reg16[rs16_1], reg16[rs16_2]);
-
+											printInstruction(instWord, instructionPC, "C.XOR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
 											break;
 									case 2: // OR
-											printInstruction(instWord, instructionPC, "C.OR", reg16[rd16], reg16[rs16_1], reg16[rs16_2]);
-
+											printInstruction(instWord, instructionPC, "C.OR", reg16[rd16], reg16[rs16], reg16[rs16_2]);
 											break;
 									case 3: // AND
-											printInstruction(instWord, instructionPC, "C.AND", reg16[rd16], reg16[rs16_1], reg16[rs16_2]);
+											printInstruction(instWord, instructionPC, "C.AND", reg16[rd16], reg16[rs16], reg16[rs16_2]);
 											break;
 									default:
 											printInstruction(instWord, instructionPC, true);
@@ -435,37 +438,14 @@ void instDecExec(unsigned int instWord)
 								break;
 					} 
 					break;
-			case 5: //J
-					int imm5 = (instWord >> 2) & 0x1;
-					int imm1to3 = (instWord >> 3) & 0x7;
-					int imm7 = (instWord >> 6) & 0x1;
-					int imm6 = (instWord >> 7) & 0x1;
-					int imm10 = (instWord >> 8) & 0x1;
-					int imm8to9 = (instWord >> 9) & 0x3;
-					int imm4 = (instWord >> 11) & 0x1;
-					int imm11 = (instWord >> 12) & 0x1;
-					int imm = ((imm1to3 & 0x7) << 1) | ((imm4 & 0x1) << 4) | ((imm5 & 0x1) << 5) | ((imm6 & 0x1) << 6) | ((imm7 & 0x1) << 7) | ((imm8to9 & 0x3) << 8) | ((imm10 & 0x1) << 10) | ((imm11 ? 0xFFFFF800: 0x0)) ;
-					printInstruction(instWord, instructionPC, "C.JAL", reg32[0], imm);
+			case 5: //J -> convert to JAL
+					printInstruction(instWord, instructionPC, "C.JAL", reg32[0], J_imm, true, true);
 					break;
 			case 6: //BEQZ pseudo so we translate to beq w/r to zero register, signed 
-					unsigned int rs16 = (instWord >> 7) & 0x7; // supports the compressed registers only
-					int imm8 = (instWord >> 12) & 0x1;
-					int imm3to4 = (instWord >> 10) & 0x3;
-					int imm5 = (instWord >> 2) & 0x1;
-					int imm1to2 = (instWord >> 3) & 0x3;
-					int imm6to7 = (instWord > 5) & 0x3;
-					int imm = (imm8 ? 0xFFFFFF00: 0x0) | ((imm1to2& 0x3) << 1) | ((imm3to4 & 0x3) << 3) | ((imm5 & 0x1) << 5) | ((imm6to7 & 0x3) << 6);
-					printInstruction(instWord, instructionPC, "C.BEQ", reg16[rs16], reg16[0], imm);
+					printInstruction(instWord, instructionPC, "C.BEQ", reg16[rs16], reg16[0], B_imm, true, true);
 					break;
 			case 7: //BNEZ 
-					unsigned int rs16 = (instWord >> 7) & 0x7; // supports the compressed registers only
-					int imm8 = (instWord >> 12) & 0x1;
-					int imm3to4 = (instWord >> 10) & 0x3;
-					int imm5 = (instWord >> 2) & 0x1;
-					int imm1to2 = (instWord >> 3) & 0x3;
-					int imm6to7 = (instWord > 5) & 0x3;
-					int imm = (imm8 ? 0xFFFFFF00: 0x0) | ((imm1to2& 0x3) << 1) | ((imm3to4 & 0x3) << 3) | ((imm5 & 0x1) << 5) | ((imm6to7 & 0x3) << 6);
-					printInstruction(instWord, instructionPC, "C.BNE", reg16[rs16], reg16[0], imm);
+					printInstruction(instWord, instructionPC, "C.BNE", reg16[rs16], reg16[0], B_imm, true, true);
 					break;
 			default:
 					printInstruction(instWord, instructionPC, true);
@@ -477,28 +457,20 @@ void instDecExec(unsigned int instWord)
 		switch(funct3)
 		{
 			case 0: // slli 
-				unsigned int rd16, rs16;
-				rd16=rs16 = (instWord >> 7) & 0x1F;
-				unsigned int imm5 = (instWord >> 12) & 0x1;
-				unsigned int imm0to4 = (instWord >> 2) & 0x1F;
-				unsigned int imm = ((imm5 & 0x1) << 5) | (imm0to4 & 0x1F);
-				printInstruction(instWord, instructionPC, "C.SRLI", reg16[rd16], reg16[rs16], imm);
+				printInstruction(instWord, instructionPC, "C.SLLI", reg16[rd16], reg16[rs16], I_imm);
 				break;
-			case 4:
-				unsigned int funct7 = (instWord >> 12) & 0x1;
-				unsigned int rs32_1, rd32, rs32_2;
-				rs32_1 = rd32 = (instWord >> 7) & 0x1F;
-				rs32_2 = (instWord >> 2) & 0x1F;
+
+			case 4:	
 				switch(funct7)
 				{
 					case 0:
 						if(rs32_2 == 0x0) // JR
 						{
-							printInstruction(instWord, instructionPC, "C.JALR", reg32[0],  reg32[rs32_1], 0);
+							printInstruction(instWord, instructionPC, "C.JALR", reg32[0],  reg32[rs32], 0, true, true);
 						}
-						else if(rs32_2 != 0x0) // MV -> switch to true instruction
+						else if(rs32_2 != 0x0) // MV -> switch to true instruction 
 						{
-							printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32_2], 0);
+							printInstruction(instWord, instructionPC, "C.ADDI", reg32[rd32], reg32[rs32_2], 0, true);
 						}
 						else // unknown 
 						{
@@ -508,11 +480,11 @@ void instDecExec(unsigned int instWord)
 					case 1:
 						if(rs32_2 == 0x0) // JALR -> jalr x1, rs1, 0
 						{
-							printInstruction(instWord, instructionPC, "C.JALR", reg32[1],  reg32[rs32_1], 0);
+							printInstruction(instWord, instructionPC, "C.JALR", reg32[1],  reg32[rs32], 0, true, true);
 						}
 						else if(rs32_2 != 0x0) // ADD 
 						{
-							printInstruction(instWord, instructionPC, "C.ADD", reg32[rd32], reg32[rs32_1], reg32[rs32_2]);
+							printInstruction(instWord, instructionPC, "C.ADD", reg32[rd32], reg32[rs32], reg32[rs32_2]);
 						}
 						else // unknown 
 						{
@@ -522,7 +494,9 @@ void instDecExec(unsigned int instWord)
 					default:
 							printInstruction(instWord, instructionPC, true);
 							break;
-				}	
+				}
+			default:
+				printInstruction(instWord, InstructionPC, true);	
 		}
 	}
 	else
