@@ -13,7 +13,9 @@ We weren't able to implement the label function due to time constraints. The sam
 There aren't any issues that we have encountered when trying out all the sample cases uploaded on blackboard or the test cases that we have created. The code runs smoothly as far as we are concerned.
 # Contributions of each team member:
 Mohamed Elkholy: code for all compressed instructions + combining the code
-Salma Aly: code and test cases for uncompressed B, U, R instructions + readme file
-Allaa El Khouly: code and test cases for uncompressed I, S, J instructions + test cases for compressed instructions
-We all worked together to debug the errors that came up when trying the test cases
 
+Salma Aly: code and test cases for uncompressed B, U, R instructions + readme file
+
+Allaa El Khouly: code and test cases for uncompressed I, S, J instructions + test cases for compressed instructions
+
+We all worked together to debug the errors that came up when trying the test cases
