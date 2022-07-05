@@ -330,12 +330,12 @@ You can tell which instruction word it is from the string passed to the print fu
     {
         switch (funct3)
             {
-            case 0:  //SH
-                printInstruction(instWord, instPC, "SH", reg32[rs2], reg32[rs1], S_imm);
+            case 0:  //SB
+                printInstruction(instWord, instPC, "SB", reg32[rs2], reg32[rs1], S_imm);
                 break;
 
-            case 1:  //SB
-                printInstruction(instWord, instPC, "SB", reg32[rs2], reg32[rs1], S_imm);
+            case 1:  //SH
+                printInstruction(instWord, instPC, "SH", reg32[rs2], reg32[rs1], S_imm);
                 break;
 
             case 2:  //SW
